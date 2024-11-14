@@ -12,8 +12,9 @@ class SentimentAnalysis:
         self.make_all_tweets_lowercase()
         self.data["text"] = self.data["text"].apply(self.remove_url_mentions_hashtags)
         self.data["text"] = self.data["text"].apply(self.remove_punctuation)
+        self.data["text"] = self.data["text"].apply(self.remove_emojis)
 
-        print(self.data.head(10))
+        print(self.data.head(100))
 
     def make_all_tweets_lowercase(self):
         """
@@ -46,6 +47,21 @@ class SentimentAnalysis:
             # Use translate method to remove punctuation
             return text.translate(translator)
         return text
+
+    def remove_emojis(self, text):
+        """Removes emojis from a string.
+
+        Args:
+            text: The input string.
+
+        Returns:
+            The string with emojis removed.
+        """
+        if not isinstance(text, str):
+            return text
+
+        emoji_pattern = re.compile("[\U00010000-\U0010FFFF]", flags=re.UNICODE)
+        return emoji_pattern.sub("", text)
 
 
 SentimentAnalysis().pre_process()
