@@ -3,17 +3,23 @@ import string
 
 import nltk
 import pandas as pd
+import spacy
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 
 nltk.download("punkt")
+nltk.download("punkt_tab")
 nltk.download("stopwords")
+
+
+# spacy.cli.download("en_core_web_sm")
 
 
 class SentimentAnalysis:
     def __init__(self, file_path: str = "data/sentiment.csv"):
         self.data = pd.read_csv(file_path, on_bad_lines="skip", engine="python")
         self.stop_words: set = set(stopwords.words("english"))
+        self.nlp = spacy.load("en_core_web_sm")
 
     def pre_process(self):
         self.make_all_tweets_lowercase()
@@ -22,6 +28,7 @@ class SentimentAnalysis:
         self.data["text"] = self.data["text"].apply(self.remove_emojis)
         self.data["text"] = self.data["text"].apply(self.tokenize)
         self.data["text"] = self.data["text"].apply(self.remove_stopwords)
+        self.data["text"] = self.data["text"].apply(self.lemmatize_text)
 
         print(self.data.head(10))
 
@@ -50,12 +57,11 @@ class SentimentAnalysis:
         :param text:
         :return:
         """
-        if isinstance(text, str):
-            # Create a translation table that maps each punctuation character to None
-            translator = str.maketrans("", "", string.punctuation)
-            # Use translate method to remove punctuation
-            return text.translate(translator)
-        return text
+        if not isinstance(text, str):
+            return text
+
+        translator = str.maketrans("", "", string.punctuation)
+        return text.translate(translator)
 
     def remove_emojis(self, text):
         """Removes emojis from a string.
@@ -82,7 +88,7 @@ class SentimentAnalysis:
             return text
 
         tokens = word_tokenize(text)
-        return tokens
+        return " ".join(tokens)
 
     def remove_stopwords(self, text):
         """
@@ -93,8 +99,27 @@ class SentimentAnalysis:
         if not isinstance(text, str):
             return text
 
-        filtered_words = [word for word in text if word.lower() not in self.stop_words]
-        return filtered_words
+        filtered_words = [
+            word for word in text.split() if word.lower() not in self.stop_words
+        ]
+        return " ".join(filtered_words)
+
+    def lemmatize_text(self, text):
+        """
+        Lemmatize the input text using spaCy.
+
+        Parameters:
+            text (str): The text to lemmatize.
+
+        Returns:
+            str: The lemmatized text.
+        """
+        if not isinstance(text, str):
+            return text
+
+        doc = self.nlp(text)
+        lemmatized_text = " ".join([token.lemma_ for token in doc])
+        return lemmatized_text
 
 
 SentimentAnalysis(file_path="data/sentiment.csv").pre_process()
