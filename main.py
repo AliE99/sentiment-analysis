@@ -27,6 +27,7 @@ class SentimentAnalysis:
         self.data["text"] = self.data["text"].apply(self.remove_punctuation)
         self.data["text"] = self.data["text"].apply(self.remove_emojis)
         self.data["text"] = self.data["text"].apply(self.tokenize)
+        # self.data["text"] = self.data["text"].apply(self.handle_negation)
         self.data["text"] = self.data["text"].apply(self.remove_stopwords)
         self.data["text"] = self.data["text"].apply(self.lemmatize_text)
 
@@ -88,6 +89,21 @@ class SentimentAnalysis:
             return text
 
         tokens = word_tokenize(text)
+        return " ".join(tokens)
+
+    def handle_negation(self, text):
+        if not isinstance(text, str):
+            return text
+
+        doc = self.nlp(text)
+        tokens = []
+
+        for token in doc:
+            if token.dep_ == "neg":
+                tokens.append("NEG_" + token.head.text)
+            else:
+                tokens.append(token.text)
+
         return " ".join(tokens)
 
     def remove_stopwords(self, text):
